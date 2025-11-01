@@ -4,6 +4,9 @@ from datetime import datetime
 import os
 import json
 from pathlib import Path
+import cloudinary
+import cloudinary.uploader
+from dotenv import load_dotenv
 from models import (
     AudioPredictionCreate,
     AudioPredictionResponse,
@@ -13,9 +16,19 @@ from database import get_database
 from auth import get_current_user
 from bson import ObjectId
 
+# Load environment variables
+load_dotenv()
+
+# Configure Cloudinary
+cloudinary.config(
+    cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
+    api_key=os.getenv("CLOUDINARY_API_KEY"),
+    api_secret=os.getenv("CLOUDINARY_API_SECRET")
+)
+
 router = APIRouter(prefix="/audio-predictions", tags=["Audio Predictions"])
 
-# Create uploads directory if it doesn't exist
+# Create uploads directory for temporary files (optional, can be removed if not needed)
 UPLOAD_DIR = Path("uploads/audio")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -29,7 +42,7 @@ async def save_audio_prediction(
     user_id: str = Depends(get_current_user)
 ):
     """
-    Save audio file and its prediction result to database
+    Save audio file to Cloudinary and its prediction result to database
     """
     db = get_database()
     
@@ -42,30 +55,49 @@ async def save_audio_prediction(
             detail="Invalid prediction_result JSON format"
         )
     
-    # Generate unique filename
+    # Generate unique public_id for Cloudinary
     timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
-    file_extension = Path(audio_file.filename).suffix
-    unique_filename = f"{user_id}_{timestamp}{file_extension}"
-    file_path = UPLOAD_DIR / unique_filename
+    file_extension = Path(audio_file.filename).suffix.replace(".", "")
+    public_id = f"audio_predictions/{user_id}_{timestamp}"
     
-    # Save audio file
+    # Read audio file content
     try:
-        with open(file_path, "wb") as buffer:
-            content = await audio_file.read()
-            buffer.write(content)
+        content = await audio_file.read()
+        audio_size_bytes = audio_size or len(content)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to save audio file: {str(e)}"
+            detail=f"Failed to read audio file: {str(e)}"
+        )
+    
+    # Upload to Cloudinary
+    try:
+        # Upload audio file to Cloudinary
+        upload_result = cloudinary.uploader.upload(
+            content,
+            resource_type="video",  # Cloudinary uses 'video' resource type for audio files
+            public_id=public_id,
+            folder="audio_predictions",
+            format=file_extension,
+            tags=[user_id, "audio_prediction"]
+        )
+        
+        cloudinary_url = upload_result.get("secure_url")
+        cloudinary_public_id = upload_result.get("public_id")
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to upload audio to Cloudinary: {str(e)}"
         )
     
     # Save to database
     audio_prediction_doc = {
         "user_id": user_id,
         "audio_filename": audio_file.filename,
-        "audio_stored_filename": unique_filename,
-        "audio_path": str(file_path),
-        "audio_size": audio_size or len(content),
+        "cloudinary_url": cloudinary_url,
+        "cloudinary_public_id": cloudinary_public_id,
+        "audio_size": audio_size_bytes,
         "audio_duration": audio_duration,
         "prediction_result": prediction_data,
         "created_at": datetime.utcnow()
@@ -73,15 +105,12 @@ async def save_audio_prediction(
     
     result = db.audio_predictions.insert_one(audio_prediction_doc)
     
-    # Generate audio URL (you can customize this based on your setup)
-    audio_url = f"/audio-predictions/{str(result.inserted_id)}/audio"
-    
     return AudioPredictionResponse(
         id=str(result.inserted_id),
         user_id=user_id,
         audio_filename=audio_file.filename,
-        audio_url=audio_url,
-        audio_size=audio_prediction_doc["audio_size"],
+        audio_url=cloudinary_url,
+        audio_size=audio_size_bytes,
         audio_duration=audio_duration,
         prediction_result=prediction_data,
         created_at=audio_prediction_doc["created_at"]
@@ -109,11 +138,13 @@ async def get_audio_predictions(
         pred_result = pred.get("prediction_result", {})
         predicted_label = pred_result.get("predicted_label") or pred_result.get("output")
         confidence = pred_result.get("confidence")
+        cloudinary_url = pred.get("cloudinary_url")
         
         result.append(
             AudioPredictionListResponse(
                 id=str(pred["_id"]),
                 audio_filename=pred["audio_filename"],
+                audio_url=cloudinary_url or "",
                 predicted_label=predicted_label,
                 confidence=confidence,
                 created_at=pred["created_at"]
@@ -150,13 +181,11 @@ async def get_audio_prediction(
             detail="Audio prediction not found"
         )
     
-    audio_url = f"/audio-predictions/{prediction_id}/audio"
-    
     return AudioPredictionResponse(
         id=str(prediction["_id"]),
         user_id=prediction["user_id"],
         audio_filename=prediction["audio_filename"],
-        audio_url=audio_url,
+        audio_url=prediction.get("cloudinary_url"),
         audio_size=prediction.get("audio_size"),
         audio_duration=prediction.get("audio_duration"),
         prediction_result=prediction["prediction_result"],
@@ -170,9 +199,9 @@ async def get_audio_file(
     user_id: str = Depends(get_current_user)
 ):
     """
-    Download the audio file for a specific prediction
+    Get the Cloudinary URL for the audio file
     """
-    from fastapi.responses import FileResponse
+    from fastapi.responses import RedirectResponse
     
     db = get_database()
     
@@ -193,19 +222,16 @@ async def get_audio_file(
             detail="Audio prediction not found"
         )
     
-    audio_path = Path(prediction["audio_path"])
+    cloudinary_url = prediction.get("cloudinary_url")
     
-    if not audio_path.exists():
+    if not cloudinary_url:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Audio file not found on server"
+            detail="Audio file URL not found"
         )
     
-    return FileResponse(
-        path=audio_path,
-        media_type="audio/mpeg",
-        filename=prediction["audio_filename"]
-    )
+    # Redirect to Cloudinary URL
+    return RedirectResponse(url=cloudinary_url)
 
 
 @router.delete("/{prediction_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -214,7 +240,7 @@ async def delete_audio_prediction(
     user_id: str = Depends(get_current_user)
 ):
     """
-    Delete a specific audio prediction and its file
+    Delete a specific audio prediction from database and Cloudinary
     """
     db = get_database()
     
@@ -235,13 +261,16 @@ async def delete_audio_prediction(
             detail="Audio prediction not found"
         )
     
-    # Delete audio file
-    audio_path = Path(prediction["audio_path"])
-    if audio_path.exists():
+    # Delete from Cloudinary
+    cloudinary_public_id = prediction.get("cloudinary_public_id")
+    if cloudinary_public_id:
         try:
-            audio_path.unlink()
+            cloudinary.uploader.destroy(
+                cloudinary_public_id,
+                resource_type="video"
+            )
         except Exception as e:
-            print(f"Warning: Could not delete audio file: {e}")
+            print(f"Warning: Could not delete audio file from Cloudinary: {e}")
     
     # Delete from database
     db.audio_predictions.delete_one({"_id": ObjectId(prediction_id)})

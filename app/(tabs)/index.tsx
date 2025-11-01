@@ -72,6 +72,10 @@ export default function HomeScreen() {
     );
   };
 
+  const handleListeningPress = () => {
+    router.push('/listening');
+  };
+
   const handleProfilePress = () => {
     if (isLoggedIn) {
       // Show user menu
@@ -164,6 +168,34 @@ export default function HomeScreen() {
             <Text style={styles.statisticsNumber}>Pain</Text>
             <Text style={styles.statisticsLabel}>Most Common</Text>
           </View>
+        </View>
+      </View>
+
+      {/* Quick Actions Section */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Quick Actions</Text>
+        <View style={styles.quickActionsContainer}>
+          <TouchableOpacity 
+            style={styles.quickActionCard}
+            onPress={handleListeningPress}
+          >
+            <View style={[styles.quickActionIcon, { backgroundColor: '#FFE0B2' }]}>
+              <Ionicons name="mic" size={32} color="#FF6B35" />
+            </View>
+            <Text style={styles.quickActionTitle}>Audio Listening</Text>
+            <Text style={styles.quickActionDescription}>Analyze baby crying</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.quickActionCard}
+            onPress={() => router.push('/(tabs)/history')}
+          >
+            <View style={[styles.quickActionIcon, { backgroundColor: '#E3F2FD' }]}>
+              <Ionicons name="time" size={32} color="#2196F3" />
+            </View>
+            <Text style={styles.quickActionTitle}>History</Text>
+            <Text style={styles.quickActionDescription}>View past results</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -394,6 +426,48 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#FF6B35',
     fontWeight: '600',
+  },
+  quickActionsContainer: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  quickActionCard: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 18,
+    alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
+  quickActionIcon: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  quickActionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1a1a1a',
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  quickActionDescription: {
+    fontSize: 11,
+    color: '#666',
+    textAlign: 'center',
   },
   bottomSpacing: {
     height: 80,

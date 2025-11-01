@@ -51,7 +51,7 @@
       [
         "expo-audio",
         {
-          "microphonePermission": "Allow NeoParental to access your microphone to record baby sounds."
+          "microphonePermission": "Allow NeoParental to access your microphone"
         }
       ]
     ],

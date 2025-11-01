@@ -94,6 +94,7 @@ class AudioPredictionListResponse(BaseModel):
     """Model for listing audio predictions"""
     id: str
     audio_filename: str
+    audio_url: str
     predicted_label: Optional[str] = None
     confidence: Optional[float] = None
     created_at: datetime

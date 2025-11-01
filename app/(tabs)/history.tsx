@@ -8,9 +8,15 @@ import {
   Platform,
   ActivityIndicator,
   RefreshControl,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Audio } from 'expo-av';
 import { API_CONFIG } from '@/utils/api-config';
+import { useAudioPlayer } from 'expo-audio';
+import { Button } from 'react-native';
+
+
 
 interface AudioPrediction {
   id: string;
@@ -18,6 +24,7 @@ interface AudioPrediction {
   predicted_label: string;
   confidence: number;
   created_at: string;
+  audio_url: string;
 }
 
 // Helper function to get icon and color based on prediction label
@@ -111,6 +118,32 @@ export default function HistoryScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [playingId, setPlayingId] = useState<string | null>(null);
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
+
+  // Configure audio mode on component mount
+  useEffect(() => {
+    configureAudioMode();
+    return () => {
+      // Cleanup sound on unmount
+      if (sound) {
+        sound.unloadAsync();
+      }
+    };
+  }, []);
+
+  const configureAudioMode = async () => {
+    try {
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: false,
+        shouldDuckAndroid: true,
+      });
+    } catch (error) {
+      console.error('Error configuring audio mode:', error);
+    }
+  };
 
   const fetchPredictions = async (isRefreshing = false) => {
     try {
@@ -123,7 +156,7 @@ export default function HistoryScreen() {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OTA1YzJkZjhjYjgxOTE5MjViYTQwMTUiLCJleHAiOjE3NjIwMjIzODh9.rgnOm1dtA7HeAC1rXCAAsvwDbErqB4IohGN6bI8oa-U`,
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OTA1YzJkZjhjYjgxOTE5MjViYTQwMTUiLCJleHAiOjE3NjIwMjkwMjF9.1CpFDZ-7-GkqSTJUl2wSvDcMyZMwUJp4DrvJdcm0vgw`,
         },
       });
 
@@ -150,6 +183,67 @@ export default function HistoryScreen() {
     setRefreshing(true);
     fetchPredictions(true);
   };
+
+  const playAudio = async (audioFilename: string, predictionId: string) => {
+  try {
+    if (sound) {
+      await sound.unloadAsync();
+      setSound(null);
+    }
+
+    // Stop playing if same ID pressed again
+    if (playingId === predictionId) {
+      setPlayingId(null);
+      return;
+    }
+
+    setPlayingId(predictionId);
+
+    // ✅ Use full Flask URL — replace with your backend IP
+    const audioUrl =audioFilename;
+    console.log("Loading audio from:", audioUrl);
+
+    const { sound: newSound } = await Audio.Sound.createAsync(
+      { uri: audioUrl },
+      { shouldPlay: true },
+      onPlaybackStatusUpdate
+    );
+
+    setSound(newSound);
+  } catch (error) {
+    console.error("Error playing audio:", error);
+    setPlayingId(null);
+    Alert.alert(
+      "Playback Error",
+      "Failed to play audio. Please check your connection and try again.",
+      [{ text: "OK" }]
+    );
+  }
+};
+
+
+  const onPlaybackStatusUpdate = (status: any) => {
+    if (status.didJustFinish) {
+      // Audio finished playing
+      setPlayingId(null);
+      if (sound) {
+        sound.unloadAsync();
+        setSound(null);
+      }
+    }
+  };
+
+  const stopAudio = async () => {
+    if (sound) {
+      await sound.stopAsync();
+      await sound.unloadAsync();
+      setSound(null);
+      setPlayingId(null);
+    }
+  };
+  const audioUrl = "https://res.cloudinary.com/dnhpmvk2p/video/upload/v1762025659/audio_predictions/audio_predictions/6905c2df8cb8191925ba4015_20251101_193416.wav";
+
+  const player = useAudioPlayer(audioUrl);
 
   const renderContent = () => {
     if (loading) {
@@ -206,6 +300,7 @@ export default function HistoryScreen() {
           const relativeTime = formatRelativeTime(item.created_at);
           const absoluteTime = formatTime(item.created_at);
           const duration = extractDuration(item.audio_filename);
+          const isPlaying = playingId === item.id;
 
           return (
             <View key={item.id} style={styles.historyCard}>
@@ -237,16 +332,7 @@ export default function HistoryScreen() {
               </View>
 
               {/* Action Buttons */}
-              <View style={styles.actionButtons}>
-                <TouchableOpacity style={styles.playButton}>
-                  <Ionicons name="play" size={16} color="#FF6B35" />
-                  <Text style={styles.playButtonText}>Play</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.detailsButton}>
-                  <Ionicons name="document-text-outline" size={16} color="#666" />
-                  <Text style={styles.detailsButtonText}>Details</Text>
-                </TouchableOpacity>
-              </View>
+             <View style={styles.actionButtons}> <TouchableOpacity style={[ styles.playButton, isPlaying && styles.playButtonActive ]} onPress={() => playAudio(item.audio_url, item.id)} disabled={playingId !== null && playingId !== item.id} > {isPlaying ? ( <> <ActivityIndicator size="small" color="#FF6B35" /> <Text style={styles.playButtonText}>Playing...</Text> </> ) : ( <> <Ionicons name="play" size={16} color="#FF6B35" /> <Text style={styles.playButtonText}>Play</Text> </> )} </TouchableOpacity> <TouchableOpacity style={styles.detailsButton}> <Ionicons name="document-text-outline" size={16} color="#666" /> <Text style={styles.detailsButtonText}>Details</Text> </TouchableOpacity> </View>
             </View>
           );
         })}
@@ -448,6 +534,9 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     paddingVertical: 12,
     gap: 8,
+  },
+  playButtonActive: {
+    backgroundColor: '#FFF3E0',
   },
   playButtonText: {
     fontSize: 14,

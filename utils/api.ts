@@ -128,7 +128,7 @@ export async function saveAudioPredictionToBackend(
   audioDuration?: number
 ): Promise<SavedAudioPrediction> {
   try {
-    const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OTA1YzJkZjhjYjgxOTE5MjViYTQwMTUiLCJleHAiOjE3NjIwMjIwNDh9.SJFc-vpl-yDok6Sx-W__HHSl90i60imbmS0oYDB-l_Y"
+    const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OTA1YzJkZjhjYjgxOTE5MjViYTQwMTUiLCJleHAiOjE3NjIwMjcyNjZ9.7XkFHy5GxE0sLSdr8JMIgCgIZoW8Pa5rq0X-rBIrMvk"
     
     if (!token) {
       throw new Error('Authentication required. Please log in.');
@@ -229,7 +229,7 @@ export async function getAudioPredictionHistory(
   limit: number = 20
 ): Promise<SavedAudioPrediction[]> {
   try {
-    const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OTA1YzJkZjhjYjgxOTE5MjViYTQwMTUiLCJleHAiOjE3NjIwMjIzODh9.rgnOm1dtA7HeAC1rXCAAsvwDbErqB4IohGN6bI8oa-U"
+    const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OTA1YzJkZjhjYjgxOTE5MjViYTQwMTUiLCJleHAiOjE3NjIwMjQ2MTJ9.jypUdxrZ1_gEvNaiprzOQmHm5ySNGr2YIf4t7_DJjvY"
     
     if (!token) {
       throw new Error('Authentication required. Please log in.');
