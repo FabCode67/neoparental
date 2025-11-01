@@ -15,9 +15,9 @@ import { getUserInfo, clearAuthData } from '@/utils/auth';
 
 export default function HomeScreen() {
   const router = useRouter();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userEmail, setUserEmail] = useState('');
-  const [userName, setUserName] = useState('Guest');
+  const [isLoggedIn, setIsLoggedIn] = useState(true);
+  const [userEmail, setUserEmail] = useState('john.doe@example.com');
+  const [userName, setUserName] = useState('John Doe');
 
   useEffect(() => {
     checkLoginStatus();
@@ -103,11 +103,9 @@ export default function HomeScreen() {
         <TouchableOpacity style={styles.menuButton}>
           <Ionicons name="menu" size={26} color="#000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>NeoParental</Text>
         <View style={styles.headerIcons}>
           <TouchableOpacity style={styles.iconButton}>
             <Ionicons name="notifications-outline" size={24} color="#000" />
-            {isLoggedIn && <View style={styles.notificationBadge} />}
           </TouchableOpacity>
           <TouchableOpacity 
             style={styles.iconButton}
@@ -126,174 +124,67 @@ export default function HomeScreen() {
       <View style={styles.welcomeBanner}>
         <View style={styles.welcomeContent}>
           <Text style={styles.welcomeTitle}>{getGreeting()},</Text>
-          <Text style={styles.welcomeName}>{userName}!</Text>
+          <Text style={styles.welcomeName}>{userName}</Text>
           <Text style={styles.welcomeSubtext}>
-            {isLoggedIn 
-              ? 'Your predictions are being saved securely.' 
-              : 'Sign in to save and track your predictions.'}
+            Welcome to NeoParental
           </Text>
-          {!isLoggedIn && (
-            <TouchableOpacity 
-              style={styles.loginPromptButton}
-              onPress={() => router.push('/login')}
-            >
-              <Text style={styles.loginPromptText}>Sign In Now</Text>
-              <Ionicons name="arrow-forward" size={16} color="#FF5722" />
-            </TouchableOpacity>
-          )}
+          <Text style={styles.welcomeSubtext2}>
+            Your parenting companion
+          </Text>
         </View>
         <View style={styles.familyImageContainer}>
-          <Ionicons name="people" size={60} color="#fff" />
+          <View style={styles.familyIconWrapper}>
+            <Ionicons name="people" size={50} color="#FF6B35" />
+          </View>
         </View>
       </View>
 
-      {/* Status Cards */}
-      {isLoggedIn && (
-        <View style={styles.statusSection}>
-          <View style={styles.statusCard}>
-            <View style={styles.statusIconContainer}>
-              <Ionicons name="shield-checkmark" size={24} color="#4CAF50" />
-            </View>
-            <View style={styles.statusInfo}>
-              <Text style={styles.statusLabel}>Account Status</Text>
-              <Text style={styles.statusValue}>Active</Text>
-            </View>
-          </View>
-          <View style={styles.statusCard}>
-            <View style={styles.statusIconContainer}>
-              <Ionicons name="calendar" size={24} color="#2196F3" />
-            </View>
-            <View style={styles.statusInfo}>
-              <Text style={styles.statusLabel}>Member Since</Text>
-              <Text style={styles.statusValue}>2025</Text>
-            </View>
-          </View>
-        </View>
-      )}
-
-      {/* Category Section */}
+      {/* Statistics Section */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Categories</Text>
-        <View style={styles.categoryContainer}>
-          <TouchableOpacity style={styles.categoryCard}>
-            <View style={[styles.categoryCircle, { backgroundColor: '#FF5722' }]}>
-              <Ionicons name="medical" size={28} color="#fff" />
+        <Text style={styles.sectionTitle}>Statistics</Text>
+        <View style={styles.statisticsContainer}>
+          <View style={styles.statisticsCard}>
+            <View style={[styles.statisticsIcon, { backgroundColor: '#E3F2FD' }]}>
+              <Ionicons name="calendar-outline" size={32} color="#2196F3" />
             </View>
-            <Text style={styles.categoryText}>CHW</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.categoryCard}>
-            <View style={[styles.categoryCircle, { backgroundColor: '#2196F3' }]}>
-              <Ionicons name="fitness" size={28} color="#fff" />
+            <Text style={styles.statisticsNumber}>4</Text>
+            <Text style={styles.statisticsLabel}>This Week</Text>
+          </View>
+          <View style={styles.statisticsCard}>
+            <View style={[styles.statisticsIcon, { backgroundColor: '#E8F5E9' }]}>
+              <Ionicons name="trending-up" size={32} color="#4CAF50" />
             </View>
-            <Text style={styles.categoryText}>Pediatrician</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.categoryCard}>
-            <View style={[styles.categoryCircle, { backgroundColor: '#4CAF50' }]}>
-              <Ionicons name="heart" size={28} color="#fff" />
+            <Text style={styles.statisticsNumber}>78%</Text>
+            <Text style={styles.statisticsLabel}>Avg{"\n"}Confidence</Text>
+          </View>
+          <View style={styles.statisticsCard}>
+            <View style={[styles.statisticsIcon, { backgroundColor: '#F3E5F5' }]}>
+              <Ionicons name="medical" size={32} color="#9C27B0" />
             </View>
-            <Text style={styles.categoryText}>Family</Text>
-          </TouchableOpacity>
+            <Text style={styles.statisticsNumber}>Pain</Text>
+            <Text style={styles.statisticsLabel}>Most Common</Text>
+          </View>
         </View>
       </View>
 
-      {/* Daily Track */}
+      {/* Parenting Skills Section */}
       <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Today's Activity</Text>
-          <TouchableOpacity>
-            <Text style={styles.viewAllText}>View All</Text>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.trackContainer}>
-          <TouchableOpacity 
-            style={[styles.trackCard, { backgroundColor: '#FF5722' }]}
-            onPress={() => {
-              if (isLoggedIn) {
-                router.push('/listening');
-              } else {
-                Alert.alert('Sign In Required', 'Please sign in to record audio.', [
-                  { text: 'Cancel', style: 'cancel' },
-                  { text: 'Sign In', onPress: () => router.push('/login') },
-                ]);
-              }
-            }}
-          >
-            <View style={styles.trackIconContainer}>
-              <Ionicons name="mic" size={32} color="#fff" />
-            </View>
-            <Text style={styles.trackNumber}>5</Text>
-            <Text style={styles.trackLabel}>Recorded{'\n'}Audios</Text>
-            <Ionicons name="arrow-forward" size={16} color="#fff" style={styles.trackArrow} />
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={[styles.trackCard, { backgroundColor: '#2196F3' }]}
-            onPress={() => {
-              if (!isLoggedIn) {
-                Alert.alert('Sign In Required', 'Please sign in to upload audio.', [
-                  { text: 'Cancel', style: 'cancel' },
-                  { text: 'Sign In', onPress: () => router.push('/login') },
-                ]);
-              }
-            }}
-          >
-            <View style={styles.trackIconContainer}>
-              <Ionicons name="cloud-upload" size={32} color="#fff" />
-            </View>
-            <Text style={styles.trackNumber}>3</Text>
-            <Text style={styles.trackLabel}>Uploaded{'\n'}Audios</Text>
-            <Ionicons name="arrow-forward" size={16} color="#fff" style={styles.trackArrow} />
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={[styles.trackCard, { backgroundColor: '#4CAF50' }]}
-            onPress={() => {
-              if (isLoggedIn) {
-                router.push('/history');
-              } else {
-                Alert.alert('Sign In Required', 'Please sign in to view feedback.', [
-                  { text: 'Cancel', style: 'cancel' },
-                  { text: 'Sign In', onPress: () => router.push('/login') },
-                ]);
-              }
-            }}
-          >
-            <View style={styles.trackIconContainer}>
-              <Ionicons name="chatbox-ellipses" size={32} color="#fff" />
-            </View>
-            <Text style={styles.trackNumber}>7</Text>
-            <Text style={styles.trackLabel}>Feedback{'\n'}Received</Text>
-            <Ionicons name="arrow-forward" size={16} color="#fff" style={styles.trackArrow} />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Daily Blog */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Health Tips</Text>
-          <TouchableOpacity>
-            <Text style={styles.viewAllText}>View All</Text>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.blogCard}>
-          <View style={styles.blogImageContainer}>
-            <Ionicons name="newspaper" size={40} color="#FF5722" />
+        <Text style={styles.sectionTitle}>Parenting Skills</Text>
+        <TouchableOpacity style={styles.parentingCard}>
+          <View style={styles.parentingImagePlaceholder}>
+            <Ionicons name="restaurant" size={60} color="#FF6B35" />
           </View>
-          <View style={styles.blogContent}>
-            <Text style={styles.blogCategory}>Child Health</Text>
-            <Text style={styles.blogTitle}>Understanding Baby Cries</Text>
-            <Text style={styles.blogText} numberOfLines={3}>
-              Learn to identify different types of baby cries and what they mean. 
-              From hunger to discomfort, understanding these signals helps you 
-              respond better to your baby's needs.
+          <View style={styles.parentingOverlay}>
+            <Text style={styles.parentingTitle}>Feeding Techniques</Text>
+            <Text style={styles.parentingDescription}>
+              Master proper feeding techniques for both{"\n"}breastfeeding and bottle feeding.
             </Text>
-            <TouchableOpacity style={styles.readMoreButton}>
-              <Text style={styles.readMoreText}>Read More</Text>
-              <Ionicons name="arrow-forward" size={14} color="#FF5722" />
+            <TouchableOpacity style={styles.readMoreContainer}>
+              <Text style={styles.readMoreLink}>Read more</Text>
+              <Ionicons name="chevron-down" size={16} color="#FF6B35" />
             </TouchableOpacity>
           </View>
-        </View>
+        </TouchableOpacity>
       </View>
 
       {/* Bottom Spacing */}
@@ -330,11 +221,6 @@ const styles = StyleSheet.create({
   menuButton: {
     padding: 4,
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-  },
   headerIcons: {
     flexDirection: 'row',
     gap: 12,
@@ -343,17 +229,8 @@ const styles = StyleSheet.create({
     position: 'relative',
     padding: 4,
   },
-  notificationBadge: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#FF5722',
-  },
   welcomeBanner: {
-    backgroundColor: '#FF5722',
+    backgroundColor: '#FF6B35',
     borderRadius: 20,
     margin: 20,
     padding: 25,
@@ -377,10 +254,9 @@ const styles = StyleSheet.create({
     paddingRight: 15,
   },
   welcomeTitle: {
-    fontSize: 20,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '400',
     color: '#fff',
-    opacity: 0.9,
   },
   welcomeName: {
     fontSize: 28,
@@ -389,50 +265,51 @@ const styles = StyleSheet.create({
     marginVertical: 4,
   },
   welcomeSubtext: {
-    fontSize: 13,
+    fontSize: 16,
     color: '#fff',
-    opacity: 0.9,
-    lineHeight: 18,
-    marginTop: 4,
+    fontWeight: '500',
+    marginTop: 8,
   },
-  loginPromptButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 25,
-    marginTop: 15,
-    alignSelf: 'flex-start',
-    gap: 8,
-  },
-  loginPromptText: {
-    color: '#FF5722',
-    fontWeight: '700',
+  welcomeSubtext2: {
     fontSize: 14,
+    color: '#fff',
+    fontWeight: '400',
+    marginTop: 2,
   },
   familyImageContainer: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    overflow: 'hidden',
+    backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  statusSection: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    gap: 12,
-    marginBottom: 10,
-  },
-  statusCard: {
-    flex: 1,
-    flexDirection: 'row',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 15,
+  familyIconWrapper: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
     alignItems: 'center',
+  },
+  section: {
+    padding: 20,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1a1a1a',
+    marginBottom: 15,
+  },
+  statisticsContainer: {
+    flexDirection: 'row',
     gap: 12,
+  },
+  statisticsCard: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 18,
+    alignItems: 'center',
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -445,92 +322,35 @@ const styles = StyleSheet.create({
       },
     }),
   },
-  statusIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#f8f9fa',
+  statisticsIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: 12,
   },
-  statusInfo: {
-    flex: 1,
-  },
-  statusLabel: {
-    fontSize: 11,
-    color: '#666',
-    marginBottom: 2,
-  },
-  statusValue: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#1a1a1a',
-  },
-  section: {
-    padding: 20,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  sectionTitle: {
-    fontSize: 20,
+  statisticsNumber: {
+    fontSize: 22,
     fontWeight: 'bold',
     color: '#1a1a1a',
+    marginBottom: 4,
   },
-  viewAllText: {
-    fontSize: 14,
-    color: '#FF5722',
-    fontWeight: '600',
+  statisticsLabel: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 16,
   },
-  categoryContainer: {
-    flexDirection: 'row',
-    gap: 15,
-  },
-  categoryCard: {
-    alignItems: 'center',
-    gap: 10,
-  },
-  categoryCircle: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.15,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 3,
-      },
-    }),
-  },
-  categoryText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#333',
-  },
-  trackContainer: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  trackCard: {
-    flex: 1,
-    borderRadius: 16,
-    padding: 18,
-    alignItems: 'center',
-    minHeight: 140,
+  parentingCard: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    overflow: 'hidden',
     ...Platform.select({
       ios: {
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.15,
+        shadowOpacity: 0.1,
         shadowRadius: 8,
       },
       android: {
@@ -538,85 +358,44 @@ const styles = StyleSheet.create({
       },
     }),
   },
-  trackIconContainer: {
-    marginBottom: 8,
-  },
-  trackNumber: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginVertical: 8,
-  },
-  trackLabel: {
-    fontSize: 11,
-    color: '#fff',
-    textAlign: 'center',
-    lineHeight: 16,
-    fontWeight: '600',
-  },
-  trackArrow: {
-    marginTop: 8,
-    opacity: 0.8,
-  },
-  blogCard: {
-    flexDirection: 'row',
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    gap: 15,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 2,
-      },
-    }),
-  },
-  blogImageContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 12,
+  parentingImagePlaceholder: {
+    width: '100%',
+    height: 200,
     backgroundColor: '#FFF3E0',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  blogContent: {
-    flex: 1,
+  parentingOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
   },
-  blogCategory: {
-    fontSize: 11,
-    color: '#FF5722',
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    marginBottom: 4,
-  },
-  blogTitle: {
-    fontSize: 16,
+  parentingTitle: {
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#1a1a1a',
+    color: '#fff',
     marginBottom: 8,
   },
-  blogText: {
+  parentingDescription: {
     fontSize: 13,
+    color: '#fff',
     lineHeight: 19,
-    color: '#666',
     marginBottom: 12,
   },
-  readMoreButton: {
+  readMoreContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
   },
-  readMoreText: {
-    fontSize: 13,
-    color: '#FF5722',
-    fontWeight: '700',
+  readMoreLink: {
+    fontSize: 14,
+    color: '#FF6B35',
+    fontWeight: '600',
   },
   bottomSpacing: {
-    height: 30,
+    height: 80,
   },
 });

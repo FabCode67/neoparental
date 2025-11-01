@@ -7,7 +7,7 @@ import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const PREDICTION_API_URL = 'https://neoparental-fast-api.onrender.com';
-const BACKEND_API_URL = 'http://172.20.10.2'; // Change to your deployed backend URL
+const BACKEND_API_URL = 'http://localhost:8000'; // Change to your deployed backend URL
 
 export interface PredictionResponse {
   // New API response format
@@ -128,7 +128,7 @@ export async function saveAudioPredictionToBackend(
   audioDuration?: number
 ): Promise<SavedAudioPrediction> {
   try {
-    const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OTA1YzJkZjhjYjgxOTE5MjViYTQwMTUiLCJleHAiOjE3NjE5ODcwNjJ9.vU9NBte4L7oozm7CBWzyZi8cJOWY5Uhc1DtNuqkhDt4"
+    const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OTA1YzJkZjhjYjgxOTE5MjViYTQwMTUiLCJleHAiOjE3NjIwMjIwNDh9.SJFc-vpl-yDok6Sx-W__HHSl90i60imbmS0oYDB-l_Y"
     
     if (!token) {
       throw new Error('Authentication required. Please log in.');
@@ -229,14 +229,14 @@ export async function getAudioPredictionHistory(
   limit: number = 20
 ): Promise<SavedAudioPrediction[]> {
   try {
-    const token = await getAuthToken();
+    const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OTA1YzJkZjhjYjgxOTE5MjViYTQwMTUiLCJleHAiOjE3NjIwMjIzODh9.rgnOm1dtA7HeAC1rXCAAsvwDbErqB4IohGN6bI8oa-U"
     
     if (!token) {
       throw new Error('Authentication required. Please log in.');
     }
 
     const response = await fetch(
-      `${BACKEND_API_URL}/audio-predictions/?skip=${skip}&limit=${limit}`,
+      `${BACKEND_API_URL}/audio-predictions`,
       {
         method: 'GET',
         headers: {
@@ -267,7 +267,7 @@ export async function getPredictionStats(): Promise<{
   average_confidence: number;
 }> {
   try {
-    const token = await getAuthToken();
+    const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OTA1YzJkZjhjYjgxOTE5MjViYTQwMTUiLCJleHAiOjE3NjIwMjIwNDh9.SJFc-vpl-yDok6Sx-W__HHSl90i60imbmS0oYDB-l_Y";
     
     if (!token) {
       throw new Error('Authentication required. Please log in.');
@@ -297,7 +297,7 @@ export async function getPredictionStats(): Promise<{
  */
 export async function deleteAudioPrediction(predictionId: string): Promise<void> {
   try {
-    const token = await getAuthToken();
+    const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OTA1YzJkZjhjYjgxOTE5MjViYTQwMTUiLCJleHAiOjE3NjIwMjEzMTh9.KlGbbfElEIdcyS4PTknkSm-EpnH1jg07SBXBmh75zxs"
     
     if (!token) {
       throw new Error('Authentication required. Please log in.');
