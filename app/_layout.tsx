@@ -1,8 +1,9 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AppState, AppStateStatus } from 'react-native';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -14,18 +15,20 @@ export const unstable_settings = {
 function useProtectedRoute(isAuthenticated: boolean | null) {
   const segments = useSegments();
   const router = useRouter();
+  const hasNavigated = useRef(false);
 
   useEffect(() => {
-    if (isAuthenticated === null) return; // Still checking auth status
+    if (isAuthenticated === null) return;
 
     const inAuthGroup = segments[0] === '(tabs)';
     const inAuthScreens = segments[0] === 'login' || segments[0] === 'register';
 
     if (!isAuthenticated && inAuthGroup) {
-      // Redirect to login if trying to access protected routes
+      console.log('🚫 Not authenticated, redirecting to login');
       router.replace('/login');
-    } else if (isAuthenticated && inAuthScreens) {
-      // Redirect to home if authenticated and on login/register screens
+    } else if (isAuthenticated && inAuthScreens && !hasNavigated.current) {
+      console.log('✅ Authenticated, redirecting to home');
+      hasNavigated.current = true;
       router.replace('/(tabs)');
     }
   }, [isAuthenticated, segments]);
@@ -34,38 +37,57 @@ function useProtectedRoute(isAuthenticated: boolean | null) {
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const router = useRouter();
+  const appState = useRef(AppState.currentState);
 
-  useEffect(() => {
-    checkAuthStatus();
-    
-    // Set up an interval to check auth status periodically
-    const interval = setInterval(checkAuthStatus, 1000);
-    
-    return () => clearInterval(interval);
-  }, []);
-
-  const checkAuthStatus = async () => {
+  // Memoized auth check function
+  const checkAuthStatus = useCallback(async () => {
     try {
       const token = await AsyncStorage.getItem('authToken');
       const newAuthState = !!token;
       
-      // Only update if auth state actually changed
-      if (newAuthState !== isAuthenticated) {
-        console.log('🔄 Auth state changed:', newAuthState ? 'logged in' : 'logged out');
-        setIsAuthenticated(newAuthState);
-      }
+      setIsAuthenticated(prev => {
+        // Only update if state actually changed
+        if (prev !== newAuthState) {
+          console.log('🔄 Auth state changed:', newAuthState ? 'logged in' : 'logged out');
+          return newAuthState;
+        }
+        return prev;
+      });
     } catch (error) {
       console.error('Error checking auth status:', error);
       setIsAuthenticated(false);
     }
-  };
+  }, []);
+
+  // Check auth on mount
+  useEffect(() => {
+    checkAuthStatus();
+  }, [checkAuthStatus]);
+
+  // Check auth when app comes to foreground
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
+      if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
+        checkAuthStatus();
+      }
+      appState.current = nextAppState;
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [checkAuthStatus]);
+
+  // Listen to auth changes via custom event (optional enhancement)
+  useEffect(() => {
+    // You can add a custom event listener here for manual auth changes
+    // This would replace the polling mechanism
+  }, []);
 
   useProtectedRoute(isAuthenticated);
 
   if (isAuthenticated === null) {
-    // You could add a splash screen component here
-    return null;
+    return null; // Could show splash screen here
   }
 
   return (
@@ -100,13 +122,6 @@ export default function RootLayout() {
         />
         <Stack.Screen 
           name="listening" 
-          options={{ 
-            headerShown: false,
-            presentation: 'card',
-          }} 
-        />
-        <Stack.Screen 
-          name="history" 
           options={{ 
             headerShown: false,
             presentation: 'card',

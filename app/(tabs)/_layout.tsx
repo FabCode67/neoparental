@@ -42,10 +42,10 @@ export default function TabLayout() {
       <Tabs.Screen
         name="explore"
         options={{
-          title: 'Calls',
-          tabBarIcon: ({ color }) => (
+          title: 'Settings',
+          tabBarIcon: ({ color, focused }) => (
             <Ionicons 
-              name="call-outline" 
+              name={focused ? "settings" : "settings-outline"} 
               size={24} 
               color={color} 
             />

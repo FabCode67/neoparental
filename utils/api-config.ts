@@ -4,51 +4,55 @@ import { Platform } from 'react-native';
  * API Configuration for NeoParental App
  * 
  * 🔧 SETUP INSTRUCTIONS:
- * 1. Find your laptop's IP address:
+ * 1. Copy .env.example to .env
+ * 2. Find your laptop's IP address:
  *    - Windows: Run 'ipconfig' in Command Prompt
  *    - macOS: Run 'ifconfig | grep "inet "' in Terminal
  *    - Look for IPv4 address (e.g., 192.168.1.100)
- * 
- * 2. Update LAPTOP_IP below with your IP address
- * 
- * 3. Start backend with:
+ * 3. Update EXPO_PUBLIC_LAPTOP_IP in .env file
+ * 4. Start backend with:
  *    python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
- * 
- * 4. Ensure phone and laptop are on same WiFi network
+ * 5. Ensure phone and laptop are on same WiFi network
+ * 6. IMPORTANT: Restart Expo after changing .env (Ctrl+C then npm start)
  */
 
-// 🔥 UPDATE THIS with your laptop's IP address!
-// Find it using: ipconfig (Windows) or ifconfig (Mac/Linux)
-const LAPTOP_IP = '172.20.10.2'; // ← CHANGE THIS TO YOUR LAPTOP'S IP!
+// Get environment variables - Expo automatically provides process.env for EXPO_PUBLIC_ prefixed vars
+const LAPTOP_IP = process.env.EXPO_PUBLIC_LAPTOP_IP || '192.168.1.100';
+const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+const PREDICTION_API_URL = process.env.EXPO_PUBLIC_PREDICTION_API_URL || 'https://neoparental-fast-api.onrender.com';
+const API_TIMEOUT = parseInt(process.env.EXPO_PUBLIC_API_TIMEOUT || '10000');
 
-// Check if we're in development mode and on a real device
+// Check if we're in development mode
 const isDevelopment = __DEV__;
 
 export const API_CONFIG = {
   /**
    * Base URL configuration based on platform
    * - iOS Simulator: Uses localhost
-   * - iOS Physical Device: Uses laptop IP
+   * - iOS Physical Device: Uses laptop IP from .env
    * - Android Emulator: Uses 10.0.2.2 (special Android address)
-   * - Android Physical Device: Uses laptop IP
+   * - Android Physical Device: Uses laptop IP from .env
    */
   BASE_URL: Platform.select({
     // iOS Configuration
     ios: isDevelopment 
       ? `http://${LAPTOP_IP}:8000`     // Physical device in development
-      : 'http://localhost:8000',        // Production or simulator
+      : BACKEND_URL,                    // Production or simulator
     
     // Android Configuration
     android: isDevelopment
       ? `http://${LAPTOP_IP}:8000`     // Physical device in development
       : 'http://10.0.2.2:8000',         // Emulator
     
-    // Default fallback
-    default: 'http://localhost:8000',
+    // Web/Default fallback
+    default: BACKEND_URL,
   }),
   
-  // Request timeout in milliseconds (10 seconds)
-  TIMEOUT: 10000,
+  // Prediction API URL
+  PREDICTION_API_URL,
+  
+  // Request timeout in milliseconds
+  TIMEOUT: API_TIMEOUT,
   
   // API version
   VERSION: 'v1',
@@ -98,16 +102,21 @@ export const getApiUrl = (endpoint: string): string => {
  */
 export const logApiConfig = (): void => {
   if (API_CONFIG.DEBUG) {
-    console.log('🌐 API Configuration:');
+    console.log('\n🌐 API Configuration:');
+    console.log('═'.repeat(50));
     console.log(`   Base URL: ${API_CONFIG.BASE_URL}`);
+    console.log(`   Prediction API: ${API_CONFIG.PREDICTION_API_URL}`);
     console.log(`   Platform: ${Platform.OS}`);
     console.log(`   Development: ${isDevelopment}`);
     console.log(`   Laptop IP: ${LAPTOP_IP}`);
-    console.log('');
-    console.log('📝 To update:');
-    console.log('   1. Find your IP: ipconfig (Windows) or ifconfig (Mac)');
-    console.log('   2. Update LAPTOP_IP in utils/api-config.ts');
-    console.log('   3. Restart Expo: npm start');
+    console.log(`   Timeout: ${API_CONFIG.TIMEOUT}ms`);
+    console.log('═'.repeat(50));
+    console.log('\n💡 To update configuration:');
+    console.log('   1. Edit .env file in project root');
+    console.log('   2. Update EXPO_PUBLIC_LAPTOP_IP with your IP');
+    console.log('   3. Stop Expo (Ctrl+C)');
+    console.log('   4. Restart: npm start');
+    console.log('   5. Reload app on device\n');
   }
 };
 
@@ -116,9 +125,15 @@ export const logApiConfig = (): void => {
  */
 export const testConnection = async (): Promise<boolean> => {
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    
     const response = await fetch(`${API_CONFIG.BASE_URL}/`, {
       method: 'GET',
+      signal: controller.signal,
     });
+    
+    clearTimeout(timeoutId);
     return response.ok;
   } catch (error) {
     console.error('❌ Backend connection test failed:', error);
